@@ -1,0 +1,311 @@
+@startuml Healthcare System Class Diagram
+
+' Style settings
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor<<User>> LightBlue
+    BackgroundColor<<Entity>> LightYellow
+    BackgroundColor<<Enum>> LightGreen
+}
+
+' ==================== ENUMS ====================
+enum Role <<Enum>> {
+    Doctor
+    Patient
+    Pharmacy
+}
+
+enum AppointmentStatus <<Enum>> {
+    Scheduled
+    Completed
+    Cancelled
+}
+
+enum PrescriptionStatus <<Enum>> {
+    Draft
+    Issued
+    Reserved
+    Purchased
+    Cancelled
+    Expired
+}
+
+enum PrescriptionItemType <<Enum>> {
+    Medication
+    OxygenTherapy
+    SoinLocaux
+    Inhalation
+    Injection
+}
+
+enum NotificationType <<Enum>> {
+    PrescriptionAssigned
+    PrescriptionReserved
+    PrescriptionPurchased
+    StockUnavailable
+    General
+}
+
+' ==================== BASE USER CLASS ====================
+class User <<User>> {
+    - UserId: int <<PK>>
+    - Email: string <<unique>>
+    - PasswordHash: string
+    - Role: Role
+    - Phone: string
+    - CreatedAt: DateTime
+    --
+    + Login(): JWT
+    + UpdateProfile(): void
+}
+
+' ==================== ADDRESS ENTITY ====================
+class Address <<Entity>> {
+    - AddressId: int <<PK>>
+    - Wilaya: string
+    - Province: string
+    - Commune: string
+    - Rue: string
+    - NumMaison: int
+    - UserId: int <<FK>>
+    - PlaceId: string
+    - FormattedAddress: string
+    - Lat: decimal
+    - Lng: decimal
+    --
+    + CalculateDistance(other: Address): decimal
+    + ValidateGoogleMapsCompatibility(): bool
+}
+
+' ==================== USER SPECIALIZATIONS ====================
+class Doctor <<User>> {
+    - DoctorId: int <<PK, FK>>
+    - fNameLat: string
+    - lNameLat: string
+    - fNameAr: string
+    - lNameAr: string
+    - Nationalite: string
+    - NIN: string <<hashed>>
+    --
+    + AccessPatientByNHCN(nhcn: string): Patient
+    + IssuePrescription(prescription: Prescription): void
+    + ViewMedicalHistory(patientId: int): List<Prescription>
+}
+
+class Patient <<User>> {
+    - PatientId: int <<PK, FK>>
+    - fNameLat: string
+    - lNameLat: string
+    - fNameAr: string
+    - lNameAr: string
+    - Nationalite: string
+    - NIN: string <<hashed>>
+    - NHCN: string <<unique, 16-char>>
+    - DateOfBirth: DateTime
+    --
+    + SelectPharmacy(prescriptionId: int, pharmacyId: int): void
+    + ViewPrescriptionHistory(): List<Prescription>
+    + GenerateNHCN(nin: string, secret: string): string
+}
+
+class Pharmacy <<User>> {
+    - PharmacyId: int <<PK, FK>>
+    - Name: string
+    - ContactInfo: string
+    --
+    + ManageInventory(): void
+    + ReservePrescription(prescriptionId: int): void
+    + FulfillPrescription(prescriptionId: int): void
+    + SendNotification(patientId: int, message: string): void
+}
+
+' ==================== CORE ENTITIES ====================
+class Medicine <<Entity>> {
+    - MedicineId: int <<PK>>
+    - Name: string
+    - Form: string
+    - Strength: string
+    - Notes: string
+    - IsActive: bool
+    --
+    + Activate(): void
+    + Deactivate(): void
+}
+
+class PharmacyInventory <<Entity>> {
+    - PharmacyInventoryId: int <<PK>>
+    - PharmacyId: int <<FK>>
+    - MedicineId: int <<FK>>
+    - QuantityAvailable: int
+    - LastUpdated: DateTime
+    --
+    + UpdateQuantity(quantity: int): void
+    + DecrementStock(quantity: int): bool
+    + CheckAvailability(requiredQuantity: int): bool
+}
+
+class Appointment <<Entity>> {
+    - AppointmentId: int <<PK>>
+    - DoctorId: int <<FK>>
+    - PatientId: int <<FK>>
+    - ScheduledAt: DateTime
+    - Status: AppointmentStatus
+    - Notes: string
+    --
+    + Schedule(): void
+    + Complete(): void
+    + Cancel(): void
+}
+
+class Prescription <<Entity>> {
+    - PrescriptionId: int <<PK>>
+    - DateIssued: DateTime
+    - DoctorId: int <<FK>>
+    - PatientId: int <<FK>>
+    - PharmacyId: int <<FK, nullable>>
+    - Status: PrescriptionStatus
+    - Notes: string
+    --
+    + Issue(): void
+    + Reserve(pharmacyId: int): void
+    + Purchase(): void
+    + Cancel(): void
+    + Expire(): void
+    + ValidateTransition(newStatus: PrescriptionStatus): bool
+}
+
+class PrescriptionItem <<Entity>> {
+    - PrescriptionItemId: int <<PK>>
+    - PrescriptionId: int <<FK>>
+    - MedicineId: int <<FK, nullable>>
+    - Name: string
+    - Dose: string
+    - Frequency: string
+    - Duration: string
+    - Notes: string
+    - Type: PrescriptionItemType
+    --
+    + Validate(): bool
+}
+
+class Notification <<Entity>> {
+    - NotificationId: int <<PK>>
+    - RecipientPatientId: int <<FK>>
+    - PrescriptionId: int <<FK>>
+    - Type: NotificationType
+    - Message: string
+    - IsRead: bool
+    - CreatedAt: DateTime
+    --
+    + MarkAsRead(): void
+    + Send(): void
+}
+
+' ==================== SERVICES ====================
+class AuthService {
+    + RegisterDoctor(dto: DoctorRegistrationDTO): User
+    + RegisterPatient(dto: PatientRegistrationDTO): User
+    + RegisterPharmacy(dto: PharmacyRegistrationDTO): User
+    + Login(email: string, password: string): JWT
+    + GenerateJWT(user: User): string
+    + HashPassword(password: string): string
+}
+
+class NHCNService {
+    - SECRET: string
+    --
+    + GenerateNHCN(nin: string): string
+    + ValidateNHCN(nhcn: string): bool
+}
+
+class PrescriptionService {
+    + CreateDraft(doctorId: int, patientId: int, items: List<PrescriptionItem>): Prescription
+    + IssuePrescription(prescriptionId: int): void
+    + SelectPharmacy(prescriptionId: int, pharmacyId: int): void
+    + ReservePrescription(prescriptionId: int): void
+    + PurchasePrescription(prescriptionId: int): void
+    + CancelPrescription(prescriptionId: int): void
+    + ExpirePrescription(prescriptionId: int): void
+}
+
+class RLMAService {
+    + GetRecommendations(prescriptionId: int, lat: decimal, lng: decimal, radiusKm: decimal, topK: int): List<PharmacyRecommendation>
+    - CalculateHaversineDistance(lat1: decimal, lng1: decimal, lat2: decimal, lng2: decimal): decimal
+    - CalculateAvailabilityScore(pharmacy: Pharmacy, items: List<PrescriptionItem>): decimal
+    - RankPharmacies(pharmacies: List<Pharmacy>, items: List<PrescriptionItem>, patientLat: decimal, patientLng: decimal): List<PharmacyRecommendation>
+}
+
+class InventoryService {
+    + AddInventory(pharmacyId: int, medicineId: int, quantity: int): PharmacyInventory
+    + UpdateInventory(inventoryId: int, quantity: int): void
+    + DecrementStock(pharmacyId: int, medicineId: int, quantity: int): bool
+    + CheckAvailability(pharmacyId: int, medicineId: int, quantity: int): bool
+    + GetInventory(pharmacyId: int): List<PharmacyInventory>
+}
+
+class NotificationService {
+    + SendNotification(patientId: int, prescriptionId: int, type: NotificationType, message: string): Notification
+    + GetNotifications(patientId: int): List<Notification>
+    + MarkAsRead(notificationId: int): void
+}
+
+class PharmacyRecommendation {
+    + PharmacyId: int
+    + Name: string
+    + DistanceKm: decimal
+    + AvailabilityScore: decimal
+    + MissingItems: List<string>
+    + Address: Address
+}
+
+' ==================== RELATIONSHIPS ====================
+
+' User inheritance
+User <|-- Doctor
+User <|-- Patient
+User <|-- Pharmacy
+
+' User-Address relationship
+User "1" -- "0..*" Address : has >
+
+' Enums relationships
+User --> Role
+Appointment --> AppointmentStatus
+Prescription --> PrescriptionStatus
+PrescriptionItem --> PrescriptionItemType
+Notification --> NotificationType
+
+' Doctor relationships
+Doctor "1" -- "0..*" Appointment : schedules >
+Doctor "1" -- "0..*" Prescription : issues >
+
+' Patient relationships
+Patient "1" -- "0..*" Appointment : has >
+Patient "1" -- "0..*" Prescription : receives >
+Patient "1" -- "0..*" Notification : receives >
+
+' Pharmacy relationships
+Pharmacy "0..1" -- "0..*" Prescription : fulfills >
+Pharmacy "1" -- "0..*" PharmacyInventory : manages >
+
+' Medicine relationships
+Medicine "1" -- "0..*" PharmacyInventory : stocked in >
+Medicine "0..1" -- "0..*" PrescriptionItem : prescribed in >
+
+' Prescription relationships
+Prescription "1" *-- "1..*" PrescriptionItem : contains >
+Prescription "1" -- "0..*" Notification : triggers >
+
+' Service dependencies
+AuthService ..> User : creates
+AuthService ..> NHCNService : uses
+PrescriptionService ..> Prescription : manages
+PrescriptionService ..> NotificationService : uses
+RLMAService ..> Pharmacy : ranks
+RLMAService ..> PharmacyInventory : checks
+RLMAService ..> Address : calculates distance
+RLMAService ..> PharmacyRecommendation : produces
+InventoryService ..> PharmacyInventory : manages
+NotificationService ..> Notification : creates
+
+@enduml

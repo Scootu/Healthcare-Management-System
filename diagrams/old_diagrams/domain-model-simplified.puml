@@ -1,0 +1,175 @@
+@startuml Healthcare System - Domain Model (Simplified)
+
+' Style settings
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor<<Actor>> LightBlue
+    BackgroundColor<<Entity>> LightYellow
+    BackgroundColor<<Enum>> LightGreen
+}
+
+' ==================== ENUMS ====================
+enum Role <<Enum>> {
+    Doctor
+    Patient
+    Pharmacy
+}
+
+enum PrescriptionStatus <<Enum>> {
+    Draft
+    Issued
+    Reserved
+    Purchased
+    Cancelled
+    Expired
+}
+
+enum PrescriptionItemType <<Enum>> {
+    Medication
+    OxygenTherapy
+    SoinLocaux
+    Inhalation
+    Injection
+}
+
+' ==================== CORE CLASSES ====================
+
+class User <<Actor>> {
+    UserId: int
+    Email: string
+    PasswordHash: string
+    Role: Role
+    Phone: string
+    CreatedAt: DateTime
+}
+
+class Address <<Entity>> {
+    AddressId: int
+    Wilaya: string
+    Province: string
+    Commune: string
+    Rue: string
+    NumMaison: int
+    PlaceId: string
+    FormattedAddress: string
+    Lat: decimal
+    Lng: decimal
+}
+
+class Doctor <<Actor>> {
+    DoctorId: int
+    fNameLat/fNameAr: string
+    lNameLat/lNameAr: string
+    Nationalite: string
+    NIN: string (hashed)
+}
+
+class Patient <<Actor>> {
+    PatientId: int
+    fNameLat/fNameAr: string
+    lNameLat/lNameAr: string
+    Nationalite: string
+    NIN: string (hashed)
+    NHCN: string (unique)
+    DateOfBirth: DateTime
+}
+
+class Pharmacy <<Actor>> {
+    PharmacyId: int
+    Name: string
+    ContactInfo: string
+}
+
+class Medicine <<Entity>> {
+    MedicineId: int
+    Name: string
+    Form: string
+    Strength: string
+    IsActive: bool
+}
+
+class PharmacyInventory <<Entity>> {
+    PharmacyInventoryId: int
+    QuantityAvailable: int
+    LastUpdated: DateTime
+}
+
+class Prescription <<Entity>> {
+    PrescriptionId: int
+    DateIssued: DateTime
+    Status: PrescriptionStatus
+    Notes: string
+}
+
+class PrescriptionItem <<Entity>> {
+    PrescriptionItemId: int
+    Name: string
+    Dose: string
+    Frequency: string
+    Duration: string
+    Type: PrescriptionItemType
+}
+
+class Appointment <<Entity>> {
+    AppointmentId: int
+    ScheduledAt: DateTime
+    Status: string
+    Notes: string
+}
+
+' ==================== RELATIONSHIPS ====================
+
+' User Hierarchy
+User <|-- Doctor
+User <|-- Patient
+User <|-- Pharmacy
+
+' User-Address
+User "1" -- "0..*" Address
+
+' Appointments
+Doctor "1" -- "0..*" Appointment
+Patient "1" -- "0..*" Appointment
+
+' Prescriptions
+Doctor "1" -- "0..*" Prescription : issues
+Patient "1" -- "0..*" Prescription : receives
+Pharmacy "0..1" -- "0..*" Prescription : fulfills
+
+' Prescription Items
+Prescription "1" *-- "1..*" PrescriptionItem : contains
+
+' Medicine & Inventory
+Medicine "1" -- "0..*" PharmacyInventory
+Pharmacy "1" -- "0..*" PharmacyInventory : manages
+
+' Medicine in Prescription Items
+Medicine "0..1" -- "0..*" PrescriptionItem
+
+' Enums
+User --> Role
+Prescription --> PrescriptionStatus
+PrescriptionItem --> PrescriptionItemType
+
+note bottom of Address
+  Google Maps Compatible:
+  - PlaceId for stable reference
+  - Lat/Lng for distance calculation
+  - Local fields for administrative queries
+end note
+
+note bottom of Patient
+  NHCN = SHA256(NIN + SECRET)[0:16]
+  - 16 alphanumeric characters
+  - Deterministic & non-reversible
+  - Used for patient lookup
+end note
+
+note bottom of Prescription
+  State Machine:
+  Draft → Issued → Reserved → Purchased
+            ↓          ↓
+        Cancelled  Expired
+end note
+
+@enduml

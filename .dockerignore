@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+.git/
+.vs/
+.vscode/
+.venv/
+node_modules/
+
+# Local files and docs not needed in image build context
+*.user
+*.suo
+*.log

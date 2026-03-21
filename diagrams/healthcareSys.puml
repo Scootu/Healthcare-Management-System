@@ -1,0 +1,135 @@
+@startuml healthcare_domain_model
+
+title Healthcare.Domain Class Diagram (Aligned to Current Code)
+skinparam classAttributeIconSize 0
+
+' This diagram is generated from src/Healthcare.Domain classes.
+' Associations labeled "FK" are inferred from *Id scalar properties.
+
+abstract class Entity {
+  +Id: Guid
+  +DomainEvents: IReadOnlyCollection~DomainEvent~
+  --
+  +AddDomainEvent(domainEvent: DomainEvent): void
+  +RemoveDomainEvent(domainEvent: DomainEvent): void
+  +ClearDomainEvents(): void
+}
+
+abstract class AuditableEntity {
+  +CreatedAtUtc: DateTimeOffset
+  +CreatedBy: string?
+  +LastModifiedUtc: DateTimeOffset
+  +LastModifiedBy: string?
+}
+
+abstract class DomainEvent
+
+enum Role {
+  Doctor
+  Patient
+  Pharmacy
+}
+
+enum PrescriptionStatus {
+  Draft
+  Issued
+  Reserved
+  Purchased
+  Cancelled
+  Expired
+}
+
+enum PrescriptionItemType {
+  Medication
+  OxygenTherapy
+  SoinLocaux
+  Inhalation
+  Injection
+}
+
+class User {
+  +UserId: int
+  +PasswordHash: string
+  +Role: Role
+  +firstName: string
+  +lastName: string
+  +birthDate: DateOnly
+  +birthPlace: string
+  +NIN: string
+}
+
+class Doctor {
+  +DoctorId: int
+  +specialite: string
+}
+
+class Patient {
+  +PatientId: int
+}
+
+class Pharmacy {
+  +PharmacyId: int
+}
+
+class Address {
+  +AddressId: int
+  +Wilaya: string
+  +Province: string
+  +Commune: string
+  +Rue: string
+  +NumMaison: int
+  +Lat: decimal
+  +Lng: decimal
+}
+
+class Medicine {
+  +MedicineId: int
+  +Name: string
+  +Form: string
+  +DCI: string
+  +Notes: string
+}
+
+class MedicalHistory {
+  +createdAt: DateOnly
+  +description: string
+}
+
+class Prescription {
+  +PrescriptionId: int
+  +DateIssued: DateTime
+  +DoctorId: int
+  +PatientId: int
+  +PharmacyId: int
+  +Status: PrescriptionStatus
+  +Notes: string
+}
+
+class PrescriptionItem {
+  +Name: string
+  +Dose: string
+  +Frequency: string
+  +Duration: string
+  +Type: PrescriptionItemType
+}
+
+AuditableEntity --|> Entity
+User --|> AuditableEntity
+Doctor --|> User
+Patient --|> User
+Pharmacy --|> User
+Address --|> AuditableEntity
+Medicine --|> AuditableEntity
+MedicalHistory --|> AuditableEntity
+Prescription --|> AuditableEntity
+PrescriptionItem --|> AuditableEntity
+
+User --> Role
+Prescription --> PrescriptionStatus
+PrescriptionItem --> PrescriptionItemType
+
+Prescription --> Doctor : FK DoctorId
+Prescription --> Patient : FK PatientId
+Prescription --> Pharmacy : FK PharmacyId
+
+@enduml

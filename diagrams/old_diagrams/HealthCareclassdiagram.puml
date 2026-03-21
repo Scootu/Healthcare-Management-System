@@ -1,0 +1,140 @@
+@startuml HealthCare Class Diagram (OCR Converted)
+
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor<<User>> LightBlue
+    BackgroundColor<<Entity>> LightYellow
+    BackgroundColor<<Enum>> LightGreen
+}
+
+' ==================== ENUMS ====================
+enum Role <<Enum>> {
+    Doctor
+    Patient
+    Pharmacy
+}
+
+enum PrescriptionStatus <<Enum>> {
+    Draft
+    Issued
+    Reserved
+    Purchased
+    Cancelled
+    Expired
+}
+
+enum PrescriptionItemType <<Enum>> {
+    Medication
+    OxygenTherapy
+    SoinLocaux
+    Inhalation
+    Injection
+}
+
+' ==================== CORE CLASSES ====================
+class User <<User>> {
+    - UserId: int
+    - PasswordHash: string
+    - Role: Role
+    + firstName: string
+    + lastName: string
+    + birthDate: Date
+    + birthPlace: string
+    + NIN: string
+    --
+    + Login(nin: string, password: string): JWT
+}
+
+class Address <<Entity>> {
+    + AddressId: int
+    + Wilaya: string
+    + Province: string
+    + Commune: string
+    + Rue: string
+    + NumMaison: int
+    + Lat: decimal
+    + Lng: decimal
+    --
+    + CalculateDistance(other: Address): decimal
+    + ValidateGoogleMapsCompatibility(): bool
+}
+
+class Doctor <<User>> {
+    - DoctorId: int
+    + specialite: string
+    --
+    + AccessPatient(nin: string): Patient
+    + AddPrescription(patient: Patient): void
+    + ViewPrescriptionHistory(patientId: int): List~Prescription~
+    + ViewMedicalHistory(patientId: int): List~MedicalHistory~
+}
+
+class Patient <<User>> {
+    - PatientId: int
+    --
+    + recommendedPharmacy(): List~Pharmacy~
+    + ViewPrescriptionHistory(): List~Prescription~
+    + ViewMedicalHistory(): List~MedicalHistory~
+}
+
+class Pharmacy <<User>> {
+    - PharmacyId: int
+    
+}
+
+class Medicine <<Entity>> {
+    + MedicineId: int
+    + Name: string
+    + Form: string
+    + DCI: string
+    + Notes: string
+}
+
+class Prescription <<Entity>> {
+    - PrescriptionId: int
+    - DateIssued: DateTime
+    - DoctorId: int
+    - PatientId: int
+    - PharmacyId: int
+    - Status: PrescriptionStatus
+    - Notes: string
+    --
+    + Issue(): void
+    + Reserve(pharmacyId: int): void
+    + Purchase(): void
+    + Cancel(): void
+    + Expire(): void
+    + ValidateTransition(newState: PrescriptionStatus): bool
+}
+
+class PrescriptionItem <<Entity>> {
+    + Name: string
+    + Dose: string
+    + Frequency: string
+    + Duration: string
+    + Type: PrescriptionItemType
+}
+
+class MedicalHistory <<Entity>> {
+    + createdAt: Date
+    + description: string
+}
+
+' ==================== RELATIONSHIPS ====================
+User --> Role
+Doctor --|> User
+Patient --|> User
+Pharmacy --|> User
+
+User "1" -- "0..*" Address : has
+Doctor "1" -- "0..*" Prescription : creates
+Patient "1" -- "0..*" Prescription : owns
+Pharmacy "0..1" -- "0..*" Prescription : reserves/fulfills
+Prescription "1" *-- "1..*" PrescriptionItem : contains
+PrescriptionItem "0..*" --> "0..1" Medicine : prescribed in
+Patient "1" -- "0..*" MedicalHistory : has
+
+Prescription --> PrescriptionStatus
+PrescriptionItem --> PrescriptionItemType
+
+@enduml

@@ -1,0 +1,34 @@
+e comprends bien votre demande. Voici mon analyse du projet et des fonctionnalités à implémenter:
+
+Analyse du Projet Existant
+Backend: .NET (ASP.NET Core) avec contrôleurs existants pour Auth, Pharmacies, Doctors, Patients, etc.
+Frontend: React TypeScript avec MUI (Material UI)
+Fonctionnalités existantes: Dashboard Pharmacie avec Stock Management, Prescription Lookup, et Alerts
+Fonctionnalités à Implémenter
+1. Enregistrement Pharmacie (Pharmacy Registration)
+Créer un formulaire d'inscription pour les pharmacies avec:
+
+Nom de la pharmacie
+Email et mot de passe
+Téléphone
+Adresse complète (Wilaya, Province, Commune, Rue, NumMaison)
+Coordonnées GPS (lat/lng) via Google Maps ou saisie manuelle
+2. Amélioration du Stock Management
+Ajouter de nouveaux médicaments au stock
+Visualisation améliorée de l'inventaire
+3. Recommended Location Medical Availability (RLMA)
+Interface permettant aux patients de trouver la pharmacie la plus proche qui peut fournir leur ordonnance:
+
+Affichage des pharmacies triées par disponibilité et distance
+Score de disponibilité pour chaque pharmacie
+Liste des médicaments manquants si disponibilité partielle
+Questions avant de commencer:
+Google Maps Integration: a) Souhaitez-vous intégrer Google Maps Places Autocomplete pour la saisie d'adresse? b) Ou préférez-vous une saisie manuelle des coordonnées GPS? c) Avez-vous une clé API Google Maps?
+
+Backend RLMA:
+
+Le backend n'a pas encore d'endpoint /api/recommendations/prescriptions/{prescriptionId}. Dois-je créer les API calls côté frontend qui appelleront cet endpoint (en supposant qu'il existe ou sera créé)?
+Priorité: Voulez-vous que je commence par: a) L'enregistrement Pharmacie b) Le RLMA Feature
+c) Les trois en même temps
+
+Design: Souhaitez-vous un design similaire au reste de l'application (MUI avec les thèmes existants)?

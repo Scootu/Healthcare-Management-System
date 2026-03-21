@@ -1,0 +1,44 @@
+### Docker host (default)
+#@WebApi_HostAddress = http://localhost:8080
+
+### Local dotnet run host example
+@WebApi_HostAddress = https://localhost:7280
+@ContentType = application/json
+
+### Login Doctor
+# @name loginDoctor
+POST {{WebApi_HostAddress}}/api/auth/login
+Content-Type: {{ContentType}}
+
+{
+	"NIN": "123456789",
+	"password": "AdminPass123!"
+}
+
+### Doctor token from previous response
+@doctorAccessToken = {{loginDoctor.response.body.$.accessToken}}
+
+### Login Patient
+# @name loginPatient
+POST {{WebApi_HostAddress}}/api/auth/login
+Content-Type: {{ContentType}}
+
+{
+	"NIN": "987654321",
+	"password": "PatientPass123!"
+}
+
+### Patient token from previous response
+@patientAccessToken = {{loginPatient.response.body.$.accessToken}}
+
+### Get current user (Bearer required)
+GET {{WebApi_HostAddress}}/api/auth/me
+Authorization: Bearer {{doctorAccessToken}}
+
+### Doctor-only endpoint (Bearer + Doctor role required)
+GET {{WebApi_HostAddress}}/api/auth/doctor-only
+Authorization: Bearer {{doctorAccessToken}}
+
+### Doctor-only endpoint with patient token (expected 403)
+GET {{WebApi_HostAddress}}/api/auth/doctor-only
+Authorization: Bearer {{patientAccessToken}}
