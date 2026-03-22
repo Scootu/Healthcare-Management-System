@@ -7,6 +7,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import DoctorIcon from '@mui/icons-material/LocalHospital';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import LocalPharmacyIcon from '@mui/icons-material/LocalPharmacy';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useState } from "react";
 export default function SidebarContainer({ setOpenSidebar }:{ setOpenSidebar: (open: boolean) => void}) {
     let path = location.pathname;
@@ -92,11 +93,17 @@ export default function SidebarContainer({ setOpenSidebar }:{ setOpenSidebar: (o
                             },
                             }}
                         >
-                             <MenuItem component={<Link to="/" />} active={active === "/"} onClick={() => {
-                                setActive("/");
+                             <MenuItem component={<Link to="/dashboard" />} active={active === "/dashboard"} onClick={() => {
+                                setActive("/dashboard");
                                 setOpenSidebar(false);
                                 }}>
                                 <HomeIcon sx={{ mr: 1 }} /> Home
+                            </MenuItem>
+                            <MenuItem component={<Link to="/profile" />} active={active === "/profile"} onClick={() => {
+                                setActive("/profile");
+                                setOpenSidebar(false);
+                                }}>
+                                <AccountCircleIcon sx={{ mr: 1 }} /> Profile
                             </MenuItem>
                             <MenuItem component={<Link to="/users" />} active={active === "/users"} onClick={() => {
                                 setActive("/users");

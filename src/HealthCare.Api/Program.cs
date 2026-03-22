@@ -19,6 +19,23 @@ var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<
 
 var jwtKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key));
 
+const string CorsPolicyName = "ClientCors";
+
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+	?? ["http://localhost:5173", "http://localhost:8000"];
+
+builder.Services.AddCors(options =>
+{
+	options.AddPolicy(CorsPolicyName, policy =>
+	{
+		policy
+			.WithOrigins(allowedOrigins)
+			.AllowAnyHeader()
+			.AllowAnyMethod();
+	});
+});
+
+
 builder.Services
 	.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 	.AddJwtBearer(options =>
@@ -37,7 +54,7 @@ builder.Services
 	});
 
 var app = builder.Build();
-
+app.UseCors(CorsPolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -1,8 +1,4 @@
 import Login from "../views/Login";
-import RegisterPatient from "../views/RegisterPatient";
-import RegisterDoctor from "../views/RegisterDoctor";
-import Landing from "../views/Landing";
-import AddPharmacy from "../views/AddPharmacy";
 import Dashboard from "../views/Dashboard";
 import PharmacyDashboard from "../views/PharmacyDashboard";
 import Users from "../views/Users";
@@ -14,6 +10,7 @@ import UsersInCommune from "../features/users/usersByCommune";
 import Doctors from "../views/Doctors";
 import AddDoctors from "../views/AddDoctors";
 import Barchart from "../views/BarChart";
+import Profile from "../views/Profile";
 import GuestGuard from "../guards/GuestGuard";
 import AuthGuard from "../guards/AuthGuard";
 import DashboardLayout from "../layouts/DashboardLayout";
@@ -22,42 +19,10 @@ import { type JSX } from "react";
 
 export const routes: routeType[] = [
   {
-    path: "/landing",
-    element: (
-      <GuestGuard>
-        <Landing />
-      </GuestGuard>
-    ),
-  },
-  {
     path: "/login",
     element: (
       <GuestGuard>
         <Login />
-      </GuestGuard>
-    ),
-  },
-  {
-    path: "/register-patient",
-    element: (
-      <GuestGuard>
-        <RegisterPatient />
-      </GuestGuard>
-    ),
-  },
-  {
-    path: "/register-doctor",
-    element: (
-      <GuestGuard>
-        <RegisterDoctor />
-      </GuestGuard>
-    ),
-  },
-  {
-    path: "/register-pharmacy",
-    element: (
-      <GuestGuard>
-        <AddPharmacy />
       </GuestGuard>
     ),
   },
@@ -152,10 +117,32 @@ export const routes: routeType[] = [
     ],
   },
   {
+    path: "/profile",
+    element: (
+      <AuthGuard>
+        <DashboardLayout />
+      </AuthGuard>
+    ),
+    children: [
+      {
+        index: true,
+        element: <Profile />,
+      },
+    ],
+  },
+  {
     path: "/",
     element: (
       <GuestGuard>
-        <Landing />
+        <Login />
+      </GuestGuard>
+    ),
+  },
+  {
+    path: "*",
+    element: (
+      <GuestGuard>
+        <Login />
       </GuestGuard>
     ),
   },
